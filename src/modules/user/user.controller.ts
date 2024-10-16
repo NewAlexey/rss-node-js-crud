@@ -6,6 +6,7 @@ import { UserService } from "./user.service";
 
 export class UserController implements ControllerModel {
   public readonly controllerUrl: string = "users";
+  private readonly maxQueryParameters = 1;
 
   private readonly userService: UserService = new UserService();
 
@@ -14,7 +15,7 @@ export class UserController implements ControllerModel {
     method: string,
     queryParams: string[],
   ): Promise<unknown> {
-    if (queryParams.length > 1) {
+    if (queryParams.length > this.maxQueryParameters) {
       throw new HttpBadRequest();
     }
 
@@ -48,7 +49,7 @@ export class UserController implements ControllerModel {
       return this.deleteUser(userId);
     }
 
-    return "heh)";
+    throw new HttpBadRequest();
   }
 
   private async getAllUsers(): Promise<UserModel[]> {
