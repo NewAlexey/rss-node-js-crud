@@ -10,8 +10,8 @@ module.exports = {
     "plugin:import/recommended",
   ],
   parser: "@typescript-eslint/parser",
-  plugins: ["@typescript-eslint", "prettier"],
-  ignorePatterns: ["build", "node_modules"],
+  plugins: ["@typescript-eslint", "prettier", "import"],
+  ignorePatterns: ["build", "node_modules", ".eslintrc.js"],
   root: true,
   settings: {
     "import/resolver": {
@@ -29,5 +29,7 @@ module.exports = {
   },
   rules: {
     "import/order": ["error", { "newlines-between": "always" }],
+    "import/no-unused-modules": [1, { unusedExports: true }],
+    "no-unused-vars": "warn",
   },
 };
