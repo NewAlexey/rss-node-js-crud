@@ -2,11 +2,17 @@ import { UserModel } from "../../models/UserModel";
 import { HttpNotFoundError } from "../../core/models/HttpNotFoundError";
 import { userDb } from "../../db/user/user.db";
 
+import { UserDTO } from "./user.dto";
+
 export class UserService {
   private readonly userRepository;
 
   constructor() {
     this.userRepository = userDb;
+  }
+
+  public createUser(userData: UserDTO): UserModel {
+    return this.userRepository.add(userData);
   }
 
   public getUserById(userId: string): UserModel {

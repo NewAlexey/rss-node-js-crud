@@ -1,10 +1,14 @@
 import http from "http";
 
 import { UserController } from "./modules/user/user.controller";
-import { ControllerModel } from "./core/ControllerModel";
+import {
+  ControllerModel,
+  ControllerResponseType,
+} from "./core/ControllerModel";
 import { HttpNotFoundError } from "./core/models/HttpNotFoundError";
 import { BaseHttpError } from "./core/models/BaseHttpError";
 import { HttpBadRequest } from "./core/models/HttpBadRequest";
+import { HttpCodeEnum } from "./core/CodeEnum";
 
 class ServerHandler {
   private readonly apiPrefix: string = "api";
@@ -28,12 +32,34 @@ class ServerHandler {
         request.method,
       );
 
-      await this.responseHandler({
-        controllerUrl,
-        rest,
-        response,
-        method,
+      const data: Buffer[] = [];
+      let body = "";
+
+      request.on("data", (chunk) => {
+        data.push(chunk);
       });
+      request.on("end", async () => {
+        try {
+          body = JSON.parse(Buffer.concat(data).toString());
+        } catch (error) {
+          this.errorHandler(response, error);
+
+          return;
+        }
+
+        try {
+          await this.responseHandler({
+            controllerUrl,
+            rest,
+            response,
+            method,
+            body,
+          });
+        } catch (error) {
+          this.errorHandler(response, error);
+        }
+      });
+      request.on("error", (error) => this.errorHandler(response, error));
     } catch (error: unknown) {
       this.errorHandler(response, error);
     }
@@ -65,21 +91,24 @@ class ServerHandler {
     method: string;
     rest: string[];
     response: http.ServerResponse;
+    body?: unknown;
   }) {
-    const { controllerUrl, response, rest, method } = props;
+    const { controllerUrl, response, rest, method, body } = props;
 
-    const data = await this.controllerHandler(controllerUrl, method, rest);
+    const { data, code } = await this.controllerHandler(
+      controllerUrl,
+      method,
+      rest,
+      body,
+    );
 
-    if (!data) {
-      response.statusCode = 204;
-    } else {
-      if (typeof data === "string") {
-        response.setHeader("Content-type", "plain/text");
-      } else if (typeof data === "object") {
-        response.setHeader("Content-type", "application/json");
-      }
+    if (typeof data === "string") {
+      response.setHeader("Content-type", "plain/text");
+    } else if (typeof data === "object") {
+      response.setHeader("Content-type", "application/json");
     }
 
+    response.statusCode = code;
     response.end(JSON.stringify(data));
   }
 
@@ -87,19 +116,34 @@ class ServerHandler {
     controllerUrl: string,
     method: string,
     restQueryParams: string[],
-  ): Promise<unknown> {
+    body?: unknown,
+  ): Promise<ControllerResponseType<unknown>> {
     const controller = this.controllerMapper.get(controllerUrl);
 
     if (!controller) {
       throw new HttpNotFoundError();
     }
 
-    return controller.requestHandler(controllerUrl, method, restQueryParams);
+    return controller.requestHandler({
+      body,
+      method,
+      queryParams: restQueryParams,
+      url: controllerUrl,
+    });
   }
 
   private errorHandler(response: http.ServerResponse, error: unknown) {
+    if (error instanceof SyntaxError) {
+      response.statusCode = HttpCodeEnum.BAD_REQUEST;
+      response.setHeader("Content-type", "plain/text");
+      response.end(`Invalid Syntax. ${error.message}.`);
+
+      return;
+    }
+
     if (!(error instanceof Error)) {
-      response.statusCode = 400;
+      response.statusCode = HttpCodeEnum.BAD_REQUEST;
+      response.setHeader("Content-type", "plain/text");
       response.end("Unknown error.");
 
       return;
@@ -107,6 +151,7 @@ class ServerHandler {
 
     if (error instanceof BaseHttpError) {
       response.statusCode = error.code;
+      response.setHeader("Content-type", "application/json");
       response.end(
         JSON.stringify({ code: error.code, message: error.message }),
       );

@@ -1,13 +1,12 @@
-import { randomUUID } from "crypto";
-
 import { UserModel } from "../../models/UserModel";
 import { randomNumberFromInterval } from "../../utils/randomNumberFromInterval";
+import { generateUUID } from "../../utils/generateUUID";
 
 export function createMockUser(): UserModel {
   return {
     username: usernameList[randomNumberFromInterval(0, 4)],
     hobbies: hobbies[randomNumberFromInterval(0, 4)],
-    id: randomUUID(),
+    id: generateUUID(),
     age: randomNumberFromInterval(1, 80),
   };
 }

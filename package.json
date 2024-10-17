@@ -15,6 +15,7 @@
   "devDependencies": {
     "@tsconfig/node22": "^22.0.0",
     "@types/node": "^22.7.5",
+    "@types/uuid": "^10.0.0",
     "@typescript-eslint/eslint-plugin": "^5.59.11",
     "@typescript-eslint/parser": "^5.59.11",
     "dotenv": "^16.4.5",
@@ -27,5 +28,8 @@
     "prettier": "^3.3.3",
     "ts-node": "^10.9.2",
     "typescript": "^5.6.3"
+  },
+  "dependencies": {
+    "uuid": "^10.0.0"
   }
 }
