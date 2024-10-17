@@ -44,6 +44,10 @@ export class UserController implements ControllerModel {
 
     const [userId] = queryParams;
 
+    if (!userId) {
+      throw new HttpBadRequest();
+    }
+
     if (!validate(userId)) {
       throw new HttpBadRequest("Invalid user id.");
     }
@@ -53,8 +57,11 @@ export class UserController implements ControllerModel {
     }
 
     if (method === "PUT") {
-      //TODO implement method
-      return this.getUser(userId);
+      console.log("body", body);
+
+      const userData = validateUserData(body);
+
+      return this.updateUser({ ...userData, id: userId });
     }
 
     if (method === "DELETE") {
@@ -75,6 +82,15 @@ export class UserController implements ControllerModel {
 
   private async getAllUsers(): Promise<ControllerResponseType<UserModel[]>> {
     return { data: this.userService.getAllUsers(), code: HttpCodeEnum.OK };
+  }
+
+  private async updateUser(
+    user: UserModel,
+  ): Promise<ControllerResponseType<UserModel>> {
+    return {
+      data: this.userService.updateUser(user),
+      code: HttpCodeEnum.CREATED,
+    };
   }
 
   private async getUser(

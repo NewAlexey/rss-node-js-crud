@@ -38,13 +38,16 @@ class ServerHandler {
       request.on("data", (chunk) => {
         data.push(chunk);
       });
-      request.on("end", async () => {
-        try {
-          body = JSON.parse(Buffer.concat(data).toString());
-        } catch (error) {
-          this.errorHandler(response, error);
 
-          return;
+      request.on("end", async () => {
+        if (data.length) {
+          try {
+            body = JSON.parse(Buffer.concat(data).toString());
+          } catch (error) {
+            this.errorHandler(response, error);
+
+            return;
+          }
         }
 
         try {
