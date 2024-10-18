@@ -13,17 +13,16 @@ const PORT = process.env.PORT || 2007;
 describe("name", () => {
   let server: http.Server<typeof IncomingMessage, typeof ServerResponse>;
 
-  beforeEach(() => {
+  beforeAll(() => {
     server = new Server(PORT).getServer();
   });
 
-  afterEach(() => {
+  afterAll(() => {
     server.close();
   });
 
   test("1) Server is initialized.", () => {
     expect(server).toBeDefined();
-    server.close();
   });
 
   test("2) Server is available for request.", async () => {
@@ -53,7 +52,7 @@ describe("name", () => {
     expect(user).toBeDefined();
   });
 
-  test("6) User should be math UserModel.", async () => {
+  test("6) User should be match UserModel.", async () => {
     const response = await fetch(getDefaultUsersUrl());
     const data = (await response.json()) as UserModel[];
     const user: UserModel = data[0];
@@ -71,7 +70,9 @@ describe("name", () => {
   });
 
   test("8) Server should return bad request status, if make request for update user-data without 'id' in query string.", async () => {
-    const response = await fetch(updateUserDataUrl(""));
+    const emptyId = "";
+
+    const response = await fetch(`${getDefaultUsersUrl()}/${emptyId}`);
 
     expect(response.status).toBe(400);
   });
@@ -105,8 +106,9 @@ describe("name", () => {
     const response = await fetch(getDefaultUsersUrl());
     const data = (await response.json()) as UserModel[];
     const userId: string = data[0].id;
-
-    const getUserByIdResponse = await fetch(getUserByIdUrl(userId));
+    const getUserByIdResponse = await fetch(
+      `${getDefaultUsersUrl()}/${userId}`,
+    );
     const user = (await getUserByIdResponse.json()) as UserModel;
 
     expect(user).toBeDefined();
@@ -123,12 +125,4 @@ function getServerUrl(): string {
 
 function getDefaultUsersUrl(): string {
   return `${getServerUrl()}/users`;
-}
-
-function updateUserDataUrl(id: string): string {
-  return `${getDefaultUsersUrl()}/${id}`;
-}
-
-function getUserByIdUrl(id: string): string {
-  return `${getDefaultUsersUrl()}/${id}`;
 }
